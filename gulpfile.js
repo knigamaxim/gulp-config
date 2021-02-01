@@ -1,84 +1,66 @@
 const gulp = require('gulp');
-const cssimport = require("gulp-cssimport");
+const concat = require('gulp-concat');
 const autoprefixer = require('gulp-autoprefixer');
 const cleanCSS = require('gulp-clean-css');
+const stripCssComments = require('gulp-strip-css-comments');
+const strip = require('gulp-strip-comments');
+const uglify = require('gulp-uglify');
 const del = require('del');
-const sourcemaps = require('gulp-sourcemaps');
-const webpack = require('webpack-stream');
-const gulpif = require('gulp-if');
-const browserSync = require('browser-sync').create();
-const isDev = true;
 
-const config = {
-    src: './public/src',
-    dist: './public/dist',
-    pages: ['./*.php', './**/*.html'],
-    proxy: 'b.local',
-    css: {
-        src: '/css/**/*.css',
-        dist: '/css'
-    },
-    js: {
-        src: '/js/**/*.js',
-        dist: '/js',
-        entry: './public/src/js/index.js'
-    }
-};
+const cssFiles = [
+	'./src/css/bootstrap.min.css',
+	'./src/css/font-awesome.min.css',
+	'./src/css/owl.carousel.css',
+	'./src/css/owl.theme.default.css',
+	'./src/css/animate.css',
+	'./src/css/main_styles.css',
+	'./src/css/responsive.css'
+]; 
 
-const webpackConfig = {
-    output: {
-        filename: 'all.js'
-    },
-    module: {
-        rules: [{
-            test: /\.js$/,
-            loader: 'babel-loader',
-            exclude: '/node_modules/'
-        }]
-    },
-    mode: isDev ? 'development' : 'production',
-    devtool: isDev ? 'eval-source-map' : 'none'
-};
+const jsFiles = [
+	'./src/js/jquery.min.js',
+	'./src/js/contactform.js',
+	'./src/js/jquery.magnific-popup.js',
+	'./src/js/jquery.singlePageNav.min.js',
+	'./src/js/owl.carousel.js',
+	'./src/js/slidebars.js',
+	'./src/js/script.js'
+]; 
 
 function clean(){
-	return del([config.dist + '/*']);
+	return del(['dist/*']);
 }
 
 function styles(){
-    return gulp.src(config.src + '/css/style.css')
-        .pipe(gulpif(isDev, sourcemaps.init()))
-		.pipe(cssimport())
-		.pipe(autoprefixer({
-            overrideBrowserslist: ['>0.1%'],
+	return gulp.src(cssFiles)
+		.pipe(concat('all.css'))
+/*		.pipe(autoprefixer({
+            browsers: ['>0.1%'],
             cascade: false
+        }))*/
+        .pipe(stripCssComments({
+        	preserve: false
         }))
         .pipe(cleanCSS({
         	level: 2
         }))
-        .pipe(gulpif(isDev, sourcemaps.write()))
-        .pipe(gulp.dest(config.dist + config.css.dist))
-        .pipe(browserSync.stream());
+		.pipe(gulp.dest('./dist/css'))
 }
 
-function scripts(){
-    return gulp.src(config.js.entry)
-                .pipe(webpack(webpackConfig))
-                .pipe(gulp.dest(config.dist + config.js.dist))
-                .pipe(browserSync.stream());
-}
-
-function watch(){
-    browserSync.init({
-//        server: {  baseDir: "./" }
-        proxy: config.proxy,
-        notify: false
-    });    
-    gulp.watch(config.src + config.css.src, styles);
-    gulp.watch(config.src + config.js.src, scripts);
-    gulp.watch(config.pages).on('change', browserSync.reload);
+function script(){
+	return gulp.src(jsFiles)
+		.pipe(concat('all.js'))
+		.pipe(strip({
+        	safe: true
+        }))
+        .pipe(uglify({
+        	toplevel: true
+        }))
+		.pipe(gulp.dest('./dist/js'))
 }
 
 gulp.task('styles', styles);
-gulp.task('scripts', scripts);
-gulp.task('watch', watch);
-gulp.task('build', gulp.series(clean, gulp.parallel(styles, scripts), watch));
+gulp.task('script', script);
+gulp.task('build', gulp.series(clean,
+						gulp.parallel(styles, script)
+					));
