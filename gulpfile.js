@@ -2,6 +2,7 @@ const gulp = require('gulp');
 const concat = require('gulp-concat');
 const autoprefixer = require('gulp-autoprefixer');
 const cleanCSS = require('gulp-clean-css');
+const cssimport = require("gulp-cssimport");
 const stripCssComments = require('gulp-strip-css-comments');
 const strip = require('gulp-strip-comments');
 const uglify = require('gulp-uglify');
@@ -33,6 +34,7 @@ function clean(){
 
 function styles(){
 	return gulp.src(cssFiles)
+	        .pipe(cssimport())
 		.pipe(concat('all.css'))
 /*		.pipe(autoprefixer({
             browsers: ['>0.1%'],
